@@ -1,0 +1,6 @@
+Approach 1:
+One hot encoded output neurons, cross-entropy loss
+
+Approach 2:
+Three output neurons with sigmoid activation function, hamming loss
+
