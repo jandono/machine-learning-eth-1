@@ -6,6 +6,17 @@ from sklearn.svm import LinearSVC
 
 from multilabel import *
 
+def output_preds(name, results):
+    labels = ['gender', 'age', 'health']
+    f = open('/cluster/home/flafranc/mlp3/code/sub' + name + '.csv', 'w+')
+    n = len(results)
+    f.write('ID,Sample,Label,Predicted\n')
+    i = 0
+    while i < n:
+        for ii in range(3):
+            f.write(str(i) + ',' + str(int(i/3)) + ',' + labels[i % 3] + ',' + str(bool(results[i])) + '\n')
+            i += 1
+
 
 path_train = '../data/set_train/mri/'#4mm/'
 path_test = '../data/set_test/mri/'#4mm/'
@@ -46,7 +57,7 @@ y = y[0:train_size]
 # Relational classifs transform only the original part
 
 # Every label has its own transformer
-BEST = 8000
+BEST = 300
 # Intrinsic classifiers
 intrinsics = []
 for lbl in range(0, 3):
@@ -63,17 +74,11 @@ for lbl in range(0, 3):
 clf = MultilabelPredictor()
 print('==== Fitting... ====')
 clf.fit(x, y, intrinsics, relationals)
-print('==== Predicting... ====')
-results = clf.predict(t)
-print(results)
-results = np.ravel(results)
 
-labels = ['gender', 'age', 'health']
-f = open('final_sub.csv', 'w+')
-n = len(results)
-f.write('ID,Sample,Label,Predicted\n')
-i = 0
-while i < n:
-    for ii in range(3):
-        f.write(str(i) + ',' + str(i/3) + ',' + labels[i % 3] + ',' + str(bool(results[i])) + '\n')
-        i += 1
+print('==== Predicting... ====')
+all_results = clf.predict(t)
+#print(results)
+
+for i, results in enumerate(all_results):
+    results = np.ravel(results)
+    output_preds(str(i), results)

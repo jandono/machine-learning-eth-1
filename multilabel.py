@@ -1,6 +1,9 @@
 import numpy as np
 import itertools
 from sklearn import cross_validation
+from sklearn.metrics import hamming_loss, make_scorer
+
+hamming_scorer = make_scorer(hamming_loss, greater_is_better=False)
 
 class MultilabelPredictor():
 
@@ -28,8 +31,10 @@ class MultilabelPredictor():
             clas.fit(X, y[:, label])
             self.intrinsic.append(clas)
 
-            cv = cross_validation.cross_val_score(clas, X, y[:, label], cv=5, scoring='accuracy')
+            cv = cross_validation.cross_val_score(clas, X, y[:, label], cv=5, scoring=hamming_scorer)
             mean_intrinsic_scores.append(np.mean(cv))
+
+        print("=== Mean intrinsic scores: ", mean_intrinsic_scores)
 
         mean_relational_scores = []
 
@@ -42,9 +47,10 @@ class MultilabelPredictor():
             clas.fit(X_relational, y[:, label])
             self.relational.append(clas)
 
-            cv = cross_validation.cross_val_score(clas, X_relational, y[:, label], cv=5, scoring='accuracy')
+            cv = cross_validation.cross_val_score(clas, X_relational, y[:, label], cv=5, scoring=hamming_scorer)
             mean_relational_scores.append(np.mean(cv))
 
+        print("=== Mean relational scores: ", mean_relational_scores)
 
         improv = np.array(mean_relational_scores) - np.array(mean_intrinsic_scores)
         self.order = reversed(list(np.argsort(improv)))
@@ -68,6 +74,7 @@ class MultilabelPredictor():
             ZT = rel_clf.transform(Z)
             all_Z_transformed.append(ZT)
 
+        all_preds = [pred.copy()]
 
         while change_amount > 10: # Totally arbitrary
             print('Iteration ' + str(ITER))
@@ -75,6 +82,7 @@ class MultilabelPredictor():
             change_amount = 0
 
             for label in self.order:
+                print('Relationally predicting', label)
                 # Obtain data for this classifier
                 thisZ = all_Z_transformed[label]
                 Z_relational = np.hstack(itertools.chain((thisZ,), self.all_but_one(pred, label)))
@@ -88,8 +96,9 @@ class MultilabelPredictor():
                 pred[:, label] = pred_label
 
             print('Change: ' + str(change_amount))
+            all_preds.append(pred.copy())
 
-        return pred
+        return all_preds
 
     '''
     Returns the opposite of y[:, col] (i.e. all columns except col)
