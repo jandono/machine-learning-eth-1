@@ -142,7 +142,8 @@ results_gender = clf_gender.predict(t_gender)
 # results_gender = clf_ada_gender.predict(t_gender)
 #results_gender = results_gender[:, 1]
 
-clf_age = SVC(kernel='linear', probability=True)
+# clf_age = SVC(kernel='linear', probability=True)
+clf_age = RandomForestClassifier(n_estimators=1000, max_depth=10)
 clf_age.fit(x_age, y_age)
 results_age = clf_age.predict(t_age)
 # clf_ada_age = AdaBoostClassifier(base_estimator=clf_age, n_estimators=1000)
