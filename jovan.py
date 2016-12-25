@@ -128,12 +128,13 @@ x_age = feature_selector_age.transform(x)
 t_age = feature_selector_age.transform(t)
 
 feature_selector_health = SelectKBest(score_func=f_classif, k=8000)
-feature_selector_health.fit(x_health, y_health)
-x_health = feature_selector_health.transform(x_health)
-t_health = feature_selector_health.transform(t_health)
+feature_selector_health.fit(x, y_health)
+x_health = feature_selector_health.transform(x)
+t_health = feature_selector_health.transform(t)
 
 
 clf_gender = SVC(kernel='linear', probability=True)
+# clf_gender = RandomForestClassifier(n_estimators=1000, max_depth=10)
 clf_gender.fit(x_gender, y_gender)
 results_gender = clf_gender.predict(t_gender)
 # clf_ada_gender = AdaBoostClassifier(base_estimator=clf_gender, n_estimators=1000)
@@ -149,8 +150,9 @@ results_age = clf_age.predict(t_age)
 # results_age = clf_ada_age.predict(t_age)
 #results_age = results_age[:, 1]
 
+# clf_health = SVC(kernel='linear', probability=True)
 clf_health = RandomForestClassifier(n_estimators=1000, max_depth=10)
-clf_health.fit(x, y_health)
+clf_health.fit(x_health, y_health)
 results_health = clf_health.predict(t_health)
 #clf_ada_health = AdaBoostClassifier(base_estimator=clf_rf_health, n_estimators=1000)
 #clf_ada_health.fit(x_health, y_health)
