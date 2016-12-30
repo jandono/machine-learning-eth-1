@@ -63,7 +63,7 @@ class MultilabelPredictor():
 
         print('Predicting intrinsically')
         for label in range(len(self.intrinsic)):
-            pred[:, label] = self.intrinsic[label].predict(Z)
+            pred[:, label] = self.intrinsic[label].predict_proba(Z)[:, 1]
 
         print('Predicting with relations')
         ITER = 0
@@ -86,7 +86,7 @@ class MultilabelPredictor():
                 # Obtain data for this classifier
                 thisZ = all_Z_transformed[label]
                 Z_relational = np.hstack(itertools.chain((thisZ,), self.all_but_one(pred, label)))
-                pred_label = self.relational[label].predict(Z_relational)
+                pred_label = self.relational[label].predict_proba(Z_relational)[:, 1]
 
                 # Compute amount of change for this label
                 equal = pred_label == pred[:, label]
@@ -131,10 +131,16 @@ class Relational():
         return self.predictor.fit(X, y)
 
     '''
-    Predict from the already-transformed data Z
+    Predict with proba, but round all of them.
     '''
     def predict(self, Z):
-        return self.predictor.predict(Z)
+        return self.predict_proba(Z)[:, 1].round().astype(int)
+
+    '''
+    Predict from the already-transformed data Z
+    '''
+    def predict_proba(self, Z):
+        return self.predictor.predict_proba(Z)
 
     def get_params(self, deep=True):
          if deep:

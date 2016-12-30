@@ -1,8 +1,9 @@
 import numpy as np
 import nilearn.image
 from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 
 from multilabel import *
 
@@ -23,6 +24,9 @@ path_test = '../data/set_test/mri/'#4mm/'
 
 train_size = 278
 test_size = 138
+
+#train_size = 40
+#test_size = 20
 
 cut = {}
 cut['cut_x'] = (16, 160) # original 18 158
@@ -51,24 +55,45 @@ t = np.array(t)
 y = np.genfromtxt('../data/targets.csv', delimiter=',')
 y = y[0:train_size]
 
-# Would like:
-# Create 3x selectKbest, fit for every label
-# Intrinsic just use that
-# Relational classifs transform only the original part
 
-# Every label has its own transformer
-BEST = 300
-# Intrinsic classifiers
-intrinsics = []
-for lbl in range(0, 3):
-    intrinsics.append(Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)), ('svm', LinearSVC())]))
 
-# Fit every label to its own transformer and add to relational classifiers
+
+
+BEST = 8000
+
+# ---- Intrinsic classifiers ----
+intrinsics = [
+    # Gender
+    Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
+                ('svm', SVC(kernel='linear', probability=True))]),
+
+    # Age
+    Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
+                ('rfor', RandomForestClassifier(n_estimators=1000, max_depth=10))]),
+
+    # Health
+    Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
+                ('rfor', RandomForestClassifier(n_estimators=1000, max_depth=10))])
+]
+
+
+# ---- Relational classifiers ----
 relationals = []
-for lbl in range(0, 3):
-    this_lbl_transformer = SelectKBest(f_classif, k=BEST)
-    this_lbl_transformer.fit(x, y[:, lbl])
-    relationals.append(Relational(this_lbl_transformer, LinearSVC()))
+
+gender_selector = SelectKBest(f_classif, k=BEST)
+gender_selector.fit(x, y[:, 0])
+gender_classif = Relational(gender_selector, SVC(kernel='linear', probability=True))
+relationals.append(gender_classif)
+
+age_selector = SelectKBest(f_classif, k=BEST)
+age_selector.fit(x, y[:, 0])
+age_classif = Relational(age_selector, RandomForestClassifier(n_estimators=1000, max_depth=10))
+relationals.append(age_classif)
+
+health_selector = SelectKBest(f_classif, k=BEST)
+health_selector.fit(x, y[:, 0])
+health_classif = Relational(health_selector, RandomForestClassifier(n_estimators=1000, max_depth=10))
+relationals.append(health_classif)
 
 
 clf = MultilabelPredictor()
@@ -80,5 +105,5 @@ all_results = clf.predict(t)
 #print(results)
 
 for i, results in enumerate(all_results):
-    results = np.ravel(results)
+    results = np.ravel(results).round().astype(int)
     output_preds(str(i), results)
