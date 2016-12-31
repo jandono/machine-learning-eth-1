@@ -19,91 +19,57 @@ def output_preds(name, results):
             i += 1
 
 
-path_train = '../data/set_train/mri/'#4mm/'
-path_test = '../data/set_test/mri/'#4mm/'
-
-train_size = 278
-test_size = 138
-
-#train_size = 40
-#test_size = 20
-
-cut = {}
-cut['cut_x'] = (16, 160) # original 18 158
-cut['cut_y'] = (19, 190) # original 19 189
-cut['cut_z'] = (11, 155) # original 13 153
-
-
-x = []
-t = []
-
-for i in range(0, train_size):
-    img = nilearn.image.load_img(path_train + 'mwp1train_' + str(i + 1) + '.nii')
-    d = img.get_data()
-    d = d[cut['cut_x'][0]:cut['cut_x'][1],  cut['cut_y'][0]:cut['cut_y'][1],  cut['cut_z'][0]:cut['cut_z'][1]]
-    x.append(np.ravel(d))
-
-for i in range(0, test_size):
-    img = nilearn.image.load_img(path_test + 'mwp1test_' + str(i + 1) + '.nii')
-    d = img.get_data()
-    d = d[cut['cut_x'][0]:cut['cut_x'][1],  cut['cut_y'][0]:cut['cut_y'][1],  cut['cut_z'][0]:cut['cut_z'][1]]
-    t.append(np.ravel(d))
-
-x = np.array(x)
-t = np.array(t)
-
-y = np.genfromtxt('../data/targets.csv', delimiter=',')
-y = y[0:train_size]
-
-
-
-
-
 BEST = 8000
 
-# ---- Intrinsic classifiers ----
-intrinsics = [
-    # Gender
-    Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
-                ('svm', SVC(kernel='linear', probability=True))]),
+def fit_predict(x, y, t):
 
-    # Age
-    Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
-                ('rfor', RandomForestClassifier(n_estimators=1000, max_depth=10))]),
+    # ---- Intrinsic classifiers ----
+    intrinsics = [
+        # Gender
+        Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
+                    ('svm', SVC(kernel='linear', probability=True))]),
 
-    # Health
-    Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
-                ('rfor', RandomForestClassifier(n_estimators=1000, max_depth=10))])
-]
+        # Age
+        Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
+                    ('rfor', RandomForestClassifier(n_estimators=1000, max_depth=10))]),
 
-
-# ---- Relational classifiers ----
-relationals = []
-
-gender_selector = SelectKBest(f_classif, k=BEST)
-gender_selector.fit(x, y[:, 0])
-gender_classif = Relational(gender_selector, SVC(kernel='linear', probability=True))
-relationals.append(gender_classif)
-
-age_selector = SelectKBest(f_classif, k=BEST)
-age_selector.fit(x, y[:, 0])
-age_classif = Relational(age_selector, RandomForestClassifier(n_estimators=1000, max_depth=10))
-relationals.append(age_classif)
-
-health_selector = SelectKBest(f_classif, k=BEST)
-health_selector.fit(x, y[:, 0])
-health_classif = Relational(health_selector, RandomForestClassifier(n_estimators=1000, max_depth=10))
-relationals.append(health_classif)
+        # Health
+        Pipeline([('f_classif', SelectKBest(f_classif, k=BEST)),
+                    ('rfor', RandomForestClassifier(n_estimators=1000, max_depth=10))])
+    ]
 
 
-clf = MultilabelPredictor()
-print('==== Fitting... ====')
-clf.fit(x, y, intrinsics, relationals)
+    # ---- Relational classifiers ----
+    relationals = []
 
-print('==== Predicting... ====')
-all_results = clf.predict(t)
-#print(results)
+    gender_selector = SelectKBest(f_classif, k=BEST)
+    gender_selector.fit(x, y[:, 0])
+    gender_classif = Relational(gender_selector, SVC(kernel='linear', probability=True))
+    relationals.append(gender_classif)
 
-for i, results in enumerate(all_results):
-    results = np.ravel(results).round().astype(int)
-    output_preds(str(i), results)
+    age_selector = SelectKBest(f_classif, k=BEST)
+    age_selector.fit(x, y[:, 1])
+    age_classif = Relational(age_selector, RandomForestClassifier(n_estimators=1000, max_depth=10))
+    relationals.append(age_classif)
+
+    health_selector = SelectKBest(f_classif, k=BEST)
+    health_selector.fit(x, y[:, 2])
+    health_classif = Relational(health_selector, RandomForestClassifier(n_estimators=1000, max_depth=10))
+    relationals.append(health_classif)
+
+
+    clf = MultilabelPredictor()
+    print('==== Fitting... ====')
+    clf.fit(x, y, intrinsics, relationals)
+
+    print('==== Predicting... ====')
+    all_results = clf.predict(t)
+    #print(results)
+
+    return all_results
+
+    '''
+    for i, results in enumerate(all_results):
+        results = np.ravel(results).round().astype(int)
+        output_preds(str(i), results)
+    '''

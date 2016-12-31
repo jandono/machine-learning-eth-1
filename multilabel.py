@@ -53,7 +53,8 @@ class MultilabelPredictor():
         print("=== Mean relational scores: ", mean_relational_scores)
 
         improv = np.array(mean_relational_scores) - np.array(mean_intrinsic_scores)
-        self.order = reversed(list(np.argsort(improv)))
+        self.order = list(np.argsort(improv))
+        self.order.reverse()
 
     def predict(self, Z):
         pred = np.zeros(shape=(len(Z), len(self.intrinsic)))
@@ -76,11 +77,12 @@ class MultilabelPredictor():
 
         all_preds = [pred.copy()]
 
-        while change_amount > 10: # Totally arbitrary
+        while change_amount > 0: # Totally arbitrary
             print('Iteration ' + str(ITER))
             ITER += 1
             change_amount = 0
 
+            print (self.order)
             for label in self.order:
                 print('Relationally predicting', label)
                 # Obtain data for this classifier
@@ -89,7 +91,7 @@ class MultilabelPredictor():
                 pred_label = self.relational[label].predict_proba(Z_relational)[:, 1]
 
                 # Compute amount of change for this label
-                equal = pred_label == pred[:, label]
+                equal = pred_label.round() == pred[:, label].round()
                 change_amount += len(equal) - len(equal[equal])
 
                 # Update the predictions
