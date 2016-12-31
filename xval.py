@@ -22,8 +22,8 @@ path_test = '../data/set_test/mri/'#4mm/'
 train_size = 278
 test_size = 138
 
-#train_size = 40
-#test_size = 20
+#train_size = 20
+#test_size = 5
 
 cut = {}
 cut['cut_x'] = (16, 160) # original 18 158
@@ -56,17 +56,27 @@ SPLITS = 5
 
 cvor = KFold(len(y), 5)
 scores = []
+fp = []
+fn = []
 for trains, tests in cvor:
     train_x = x[trains]
     train_y = y[trains]
     test_x = x[tests]
 
     actual = y[tests]
-    #predicted = jovan.fit_predict(train_x, train_y, test_x)
-    predicted = fred.fit_predict(train_x, train_y, test_x)[-1].round().astype(int) # take the LAST prediction
+    predicted = jovan.fit_predict(train_x, train_y, test_x)
+    #predicted = fred.fit_predict(train_x, train_y, test_x)[-1].round().astype(int) # take the LAST prediction
 
     scores.append(hamming_loss(actual, predicted))
+
+    fn.append(list(np.logical_and(actual == 1, predicted == 0).astype(int).sum(axis=0) / len(actual)))
+    fp.append(list(np.logical_and(actual == 0, predicted == 1).astype(int).sum(axis=0) / len(actual)))
 
 print('Scores:')
 print(scores)
 print('Mean: ' + str(np.mean(scores)) + ' -- Stddev: ' + str(np.std(scores)))
+
+print('False positive rates (per fold):')
+print(fp)
+print('False negative rates (per fold):')
+print(fn)
