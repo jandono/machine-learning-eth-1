@@ -24,14 +24,14 @@ Features
 SelectKBest,f_classif,differentFeaturesForEachClassifier
 
 Model
-SVM,RandomForest,None
+SVM,RBF,None
 
 Description
 We first split the image into gray and white matter using a MatLab plugin (SPM + VBM). During that same process the plugin is capable of voxel normalization so in the end we get voxel values between 0 and 2. Afterwards when we are loading the data, we cut out the outer black voxels, such that they we end up with a cube containing the brain only.
 
-Afterwards we use SelectKBest with f_classif as a score function to select the best K features. K was chosen using cross validation. We select the features for each of the three following classifiers individually.
+Afterwards we use SelectKBest with f_classif as a score function to select the best K features. K was chosen using cross validation. We select the features for each of the three following classifiers individually and also vary the number of features for each of them (gender: 10000, age: 4000, health status: 500).
 
-As a model we used a Support Vector Classifier for predicting the gender and two seperate Random Forest Classifiers for predicting the age and their health status. The number of estimators and the max depth parameters were tuned using cross validation.
+As a model we used three individual Support Vector Classifiers. For predicting the gender we used a linear kernel, while for the other two classifiers (age and health status) we used a radial basis function kernel. The model for each classifier was selected using 10-fold cross validation
 
 No post processing was performed.
 
