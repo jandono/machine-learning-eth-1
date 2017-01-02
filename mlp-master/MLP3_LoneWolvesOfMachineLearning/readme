@@ -1,0 +1,39 @@
+# The authors' emails go into the first lines, one email per line.
+# Make sure you provide the .ethz.ch email.
+#
+# Now comes the key section with the three subsections "Preprocessing",
+# "Features" and "Model". Leave the headlines as they are and only
+# modify the keys. Try to provide at least three informative keys per
+# subsection and separate the keys with commas ",".
+#
+# Each key should be single word or concatenation of several words,
+# e.g. crop, histogram, mutualinformationscore, linearregression, etc.
+#
+# The final section is "Description" which includes a verbose summary
+# with no strict formatting but make sure it has a reasonable minimum
+# length.
+
+andonovj@student.ethz.ch
+gallussb@student.ethz.ch
+flafranc@student.ethz.ch
+
+Preprocessing
+GMextraction,normalization,removeouterblackvoxels
+
+Features
+SelectKBest,f_classif,differentFeaturesForEachClassifier
+
+Model
+SVM,RandomForest,None
+
+Description
+We first split the image into gray and white matter using a MatLab plugin (SPM + VBM). During that same process the plugin is capable of voxel normalization so in the end we get voxel values between 0 and 2. Afterwards when we are loading the data, we cut out the outer black voxels, such that they we end up with a cube containing the brain only.
+
+Afterwards we use SelectKBest with f_classif as a score function to select the best K features. K was chosen using cross validation. We select the features for each of the three following classifiers individually.
+
+As a model we used a Support Vector Classifier for predicting the gender and two seperate Random Forest Classifiers for predicting the age and their health status. The number of estimators and the max depth parameters were tuned using cross validation.
+
+No post processing was performed.
+
+IMPORTANT NOTE: 
+The GM extraction takes about 20 minutes per .nii image and the resulting images are 11GB in size. That is why we pickled the selected features and put the pickled files into source. The original code can be found commented in predict_final.py.
